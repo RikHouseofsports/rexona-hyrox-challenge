@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard | Rexona x HYROX</title>
+  <!-- Rexona brand web font: Gilroy (license: fonts.com/font/radomir-tinkov/gilroy.com)
+       Drop woff2 files in /public/fonts/ + add @font-face → picked up automatically.
+       Websafe fallback: Poppins — same geometric sans-serif, identical weight range. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-cyan: #00e5cc;
+      --accent-magenta: #ff00cc;
+      --gold: #ffd700;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      background: linear-gradient(135deg, #0a3d3d 0%, #0d5c4d 45%, #00c9b1 100%);
+      font-family: 'Gilroy', 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 400;
+      color: white;
+      display: flex;
+      flex-direction: column;
+    }
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 3rem;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 2px solid var(--accent-cyan);
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .rexona-logo {
+      height: 52px;
+      width: auto;
+      filter: brightness(0) invert(1);
+    }
+    .divider {
+      width: 2px;
+      height: 36px;
+      background: rgba(255,255,255,0.25);
+    }
+    .title-block h1 {
+      font-size: 1.5rem;
+      font-weight: 800;       /* Gilroy ExtraBold / Poppins ExtraBold */
+      letter-spacing: 0.1em;  /* brandbook: +50–120/1000em for headlines */
+      text-transform: uppercase;
+      color: white;
+      line-height: 1;
+    }
+    .title-block p {
+      font-size: 0.72rem;
+      font-weight: 300;       /* Gilroy Light / Poppins Light */
+      letter-spacing: 0.22em;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+    /* Live indicator */
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;       /* Gilroy SemiBold */
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.4; transform: scale(0.8); }
+    }
+    /* ── Main area ── */
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+      position: relative;
+    }
+    /* ── Panel ── */
+    .panel {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 2.5rem 4rem;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      pointer-events: none;
+    }
+    .panel.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    /* Category badge */
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .category-badge {
+      display: inline-block;
+      padding: 0.45rem 1.4rem;
+      border-radius: 6px;
+      font-size: 1.2rem;
+      font-weight: 800;       /* Gilroy ExtraBold */
+      letter-spacing: 0.12em; /* brandbook headline tracking */
+      text-transform: uppercase;
+    }
+    .men .category-badge {
+      background: rgba(0,229,204,0.15);
+      border: 2px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .women .category-badge {
+      background: rgba(255,0,204,0.15);
+      border: 2px solid var(--accent-magenta);
+      color: var(--accent-magenta);
+    }
+    .category-line {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(to right, rgba(255,255,255,0.15), transparent);
+    }
+    /* Leaderboard table */
+    .lb-table {
+      width: 100%;
+      border-collapse: collapse;
+      flex: 1;
+    }
+    .lb-table tr {
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: background 0.15s;
+    }
+    .lb-table tr:last-child { border-bottom: none; }
+    .lb-table td {
+      padding: 0.9rem 0;
+      font-size: 1.35rem;
+      vertical-align: middle;
+    }
+    .col-rank {
+      width: 3.5rem;
+      font-weight: 800;       /* ExtraBold for rank numbers */
+      color: rgba(255,255,255,0.35);
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+    }
+    .col-naam {
+      font-weight: 600;       /* Gilroy SemiBold */
+      padding-left: 0.5rem;
+    }
+    .col-score {
+      text-align: right;
+      font-weight: 800;       /* Gilroy ExtraBold */
+      font-size: 1.5rem;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .score-unit {
+      font-size: 0.9rem;
+      font-weight: 300;       /* Gilroy Light */
+      color: rgba(255,255,255,0.5);
+      margin-left: 0.2rem;
+    }
+    /* Rank 1 special styling */
+    .rank-1 .col-rank {
+      color: var(--gold);
+      font-size: 1.25rem;
+    }
+    .rank-1 .col-naam {
+      font-weight: 800;       /* ExtraBold for #1 */
+      font-size: 1.55rem;
+    }
+    .rank-1 .col-score {
+      font-size: 1.7rem;
+    }
+    .men .rank-1 .col-score { color: var(--accent-cyan); text-shadow: 0 0 24px rgba(0,229,204,0.5); }
+    .women .rank-1 .col-score { color: var(--accent-magenta); text-shadow: 0 0 24px rgba(255,0,204,0.4); }
+    /* Rank 2-3 accent */
+    .rank-2 .col-rank { color: rgba(255,255,255,0.6); }
+    .rank-3 .col-rank { color: rgba(255,255,255,0.45); }
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: rgba(255,255,255,0.3);
+      font-size: 1.1rem;
+      font-weight: 300;       /* Gilroy Light */
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+      background: rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-left">
+      <img src="/Rexona_logo_2015.svg" alt="Rexona" class="rexona-logo">
+      <div class="divider"></div>
+      <div class="title-block">
+        <h1>REXONA x HYROX</h1>
+        <p>72 Seconds Challenge — Live Leaderboard</p>
+      </div>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Live
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Men panel -->
+    <div class="panel men" id="panelMen">
+      <div class="category-header">
+        <span class="category-badge">Mannen</span>
+        <div class="category-line"></div>
+      </div>
+      <table class="lb-table" id="tableMen">
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Women panel -->
+    <div class="panel women" id="panelWomen">
+      <div class="category-header">
+        <span class="category-badge">Vrouwen</span>
+        <div class="category-line"></div>
+      </div>
+      <table class="lb-table" id="tableWomen">
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>HYROX Benelux &nbsp;|&nbsp; Powered by Rexona</footer>
+
+  <script>
+    const SWITCH_INTERVAL = 7000; // 7 seconds
+    let currentGender = 'men'; // 'men' | 'women'
+    let leaderboard = { men: [], women: [] };
+    let switchTimer = null;
+
+    // ── Render ──
+    function renderRows(data, tableId) {
+      const tbody = document.querySelector(`#${tableId} tbody`);
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Nog geen scores</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.map((row, i) => {
+        const rank = i + 1;
+        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+        return `
+          <tr class="${rankClass}">
+            <td class="col-rank">${rank}</td>
+            <td class="col-naam">${esc(row.naam)}</td>
+            <td class="col-score">${row.score_meters}<span class="score-unit">m</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function esc(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderAll() {
+      renderRows(leaderboard.men, 'tableMen');
+      renderRows(leaderboard.women, 'tableWomen');
+    }
+
+    // ── Panel switch ──
+    function showPanel(gender) {
+      currentGender = gender;
+      document.getElementById('panelMen').classList.toggle('active', gender === 'men');
+      document.getElementById('panelWomen').classList.toggle('active', gender === 'women');
+    }
+
+    function startRotation() {
+      if (switchTimer) clearInterval(switchTimer);
+      showPanel('men');
+      switchTimer = setInterval(() => {
+        showPanel(currentGender === 'men' ? 'women' : 'men');
+      }, SWITCH_INTERVAL);
+    }
+
+    // ── WebSocket ──
+    let ws = null;
+    let reconnectTimeout = null;
+
+    function connect() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${location.host}`);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        if (reconnectTimeout) { clearTimeout(reconnectTimeout); reconnectTimeout = null; }
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'leaderboard_update') {
+            leaderboard = { men: data.men || [], women: data.women || [] };
+            renderAll();
+          }
+        } catch (e) { /* ignore malformed */ }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket closed, reconnecting in 3s…');
+        reconnectTimeout = setTimeout(connect, 3000);
+      };
+
+      ws.onerror = () => ws.close();
+    }
+
+    // ── Init ──
+    renderAll();
+    startRotation();
+    connect();
+  </script>
+</body>
+</html>

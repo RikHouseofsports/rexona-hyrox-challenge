@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(npm install:*)",
+      "Bash(sudo rm:*)",
+      "Bash(ADMIN_PASSWORD=testadmin EXPORT_PASSWORD=testexport SESSION_SECRET=abcdef1234567890abcdef1234567890 DB_PATH=/tmp/test-challenge.db timeout 5 node server.js)",
+      "Bash(node --help)",
+      "Bash(echo \"no sqlite flag\" node -e \"process.emitWarning = \\(msg, ...args\\) => { if \\(String\\(msg\\).includes\\(''''SQLite''''\\)\\) return; process.stdout.write\\(''''warn: ''''+msg+''''\\\\n''''\\); }; require\\(''''node:sqlite''''\\)\")",
+      "Bash(node -e \"require\\(''''node:sqlite''''\\); console.log\\(''''ok''''\\)\" 2)",
+      "Bash(1 node:*)",
+      "Bash(open http://localhost:3000/leaderboard)",
+      "Bash(open http://localhost:3000/admin/login)",
+      "Bash(grep -n \"rexona-logo.svg\" \"/Users/Rik/Claude Projects/Rexona Challenge/public/\"*.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/Rexona_logo_2015.svg)"
+    ]
+  }
+}

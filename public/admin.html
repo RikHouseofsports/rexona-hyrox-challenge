@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Rexona x HYROX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-cyan: #00e5cc;
+      --accent-magenta: #ff00cc;
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.15);
+      --input-bg: rgba(0, 0, 0, 0.3);
+      --error-color: #ff4444;
+      --success-color: #00e5cc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(135deg, #0a3d3d 0%, #0d5c4d 40%, #00c9b1 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      font-family: 'Gilroy', 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 400;
+      color: white;
+      padding: 0 0 3rem;
+    }
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      background: rgba(0, 0, 0, 0.25);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .header-brand img {
+      height: 40px;
+      width: auto;
+      filter: brightness(0) invert(1);
+    }
+    .header-brand-text p {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 0.1rem;
+    }
+    .logout-form button {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.7);
+      border-radius: 6px;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .logout-form button:hover {
+      border-color: var(--error-color);
+      color: var(--error-color);
+    }
+    /* Layout */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 0;
+    }
+    /* Card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .card-title {
+      font-size: 0.78rem;
+      font-weight: 800;       /* Gilroy ExtraBold — brandbook headline style */
+      text-transform: uppercase;
+      letter-spacing: 0.15em; /* +150/1000em — within brandbook range */
+      color: var(--accent-cyan);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    /* Form grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group.full { grid-column: 1 / -1; }
+    label {
+      font-size: 0.75rem;
+      font-weight: 600;       /* Gilroy SemiBold */
+      text-transform: uppercase;
+      letter-spacing: 0.1em;  /* +100/1000em */
+      color: rgba(255,255,255,0.65);
+    }
+    input, select {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 7px;
+      color: white;
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 300;       /* Gilroy Light */
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(0,229,204,0.18);
+    }
+    select option { background: #0d3d3d; color: white; }
+    /* Checkbox row */
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 7px;
+      border: 1px solid var(--card-border);
+    }
+    .checkbox-row input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      margin-top: 2px;
+      border: 1.5px solid rgba(255,255,255,0.35);
+      border-radius: 4px;
+      background: rgba(0,0,0,0.25);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .checkbox-row input[type="checkbox"]:checked {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+    .checkbox-row input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 5px;
+      height: 9px;
+      border: 2px solid #0a3d3d;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+    .checkbox-row label {
+      font-size: 0.85rem;
+      text-transform: none;
+      letter-spacing: 0;
+      color: rgba(255,255,255,0.85);
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    /* Submit button */
+    .btn-primary {
+      background: var(--accent-cyan);
+      color: #0a3d3d;
+      border: none;
+      border-radius: 8px;
+      padding: 0.875rem 2.5rem;
+      font-size: 1rem;
+      font-weight: 800;       /* Gilroy ExtraBold */
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .btn-primary:hover {
+      background: #00f0d8;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(0,229,204,0.35);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    /* Alerts */
+    .alert {
+      border-radius: 8px;
+      padding: 0.875rem 1.1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert.success {
+      background: rgba(0,229,204,0.12);
+      border: 1px solid var(--success-color);
+      color: #a0fff5;
+    }
+    .alert.error {
+      background: rgba(255,68,68,0.12);
+      border: 1px solid var(--error-color);
+      color: #ffaaaa;
+    }
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.7rem;
+      font-weight: 600;       /* Gilroy SemiBold */
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-cyan);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      white-space: nowrap;
+    }
+    td {
+      padding: 0.75rem 0.9rem;
+      font-weight: 300;       /* Gilroy Light for table data */
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.04); }
+    .score-cell { font-weight: 800; color: var(--accent-cyan); }
+    .score-input {
+      width: 90px;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.9rem;
+    }
+    /* Action buttons */
+    .btn-edit, .btn-save, .btn-cancel, .btn-delete {
+      border-radius: 5px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.18s;
+      border: 1px solid;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .btn-edit {
+      border-color: rgba(255,255,255,0.3);
+      background: transparent;
+      color: rgba(255,255,255,0.75);
+    }
+    .btn-edit:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+    .btn-save {
+      border-color: var(--accent-cyan);
+      background: var(--accent-cyan);
+      color: #0a3d3d;
+    }
+    .btn-save:hover { background: #00f0d8; }
+    .btn-cancel {
+      border-color: rgba(255,255,255,0.2);
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+    }
+    .btn-delete {
+      border-color: var(--error-color);
+      background: transparent;
+      color: var(--error-color);
+    }
+    .btn-delete:hover { background: var(--error-color); color: white; }
+    .empty-msg {
+      text-align: center;
+      padding: 2rem;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.9rem;
+    }
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .container { padding: 1rem; }
+      header { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-brand">
+      <img src="/Rexona_logo_2015.svg" alt="Rexona">
+      <div class="header-brand-text">
+        <p>x HYROX — Admin — 72 SEC. CHALLENGE</p>
+      </div>
+    </div>
+    <form class="logout-form" method="POST" action="/admin/logout">
+      <button type="submit">Uitloggen</button>
+    </form>
+  </header>
+
+  <div class="container">
+    <!-- Registration form -->
+    <div class="card">
+      <div class="card-title">Deelnemer registreren</div>
+
+      <div id="alertSuccess" class="alert success">
+        ✓ Deelnemer succesvol geregistreerd!
+      </div>
+      <div id="alertError" class="alert error" id="alertError"></div>
+
+      <form id="registerForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="voornaam">Voornaam</label>
+            <input type="text" id="voornaam" name="voornaam" maxlength="50" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="achternaam">Achternaam</label>
+            <input type="text" id="achternaam" name="achternaam" maxlength="50" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="geslacht">Geslacht</label>
+            <select id="geslacht" name="geslacht" required>
+              <option value="">— Selecteer —</option>
+              <option value="Man">Man</option>
+              <option value="Vrouw">Vrouw</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="email">E-mailadres</label>
+            <input type="email" id="email" name="email" maxlength="200" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="score_meters">Score (meters)</label>
+            <input type="number" id="score_meters" name="score_meters" min="0" max="9999" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="event_naam">Evenement</label>
+            <select id="event_naam" name="event_naam" required>
+              <option value="">— Selecteer —</option>
+              <option value="Mechelen">Mechelen</option>
+              <option value="Rotterdam">Rotterdam</option>
+              <option value="Heerenveen">Heerenveen</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <div class="checkbox-row">
+              <input type="checkbox" id="opt_in" name="opt_in">
+              <label for="opt_in">
+                Ik ga akkoord met het ontvangen van communicatie van HYROX Benelux en Rexona
+              </label>
+            </div>
+          </div>
+          <div class="form-group full">
+            <button type="submit" class="btn-primary" id="submitBtn">Registreer deelnemer</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Today's participants table -->
+    <div class="card">
+      <div class="card-title">Deelnemers van vandaag</div>
+      <div class="table-wrap">
+        <table id="participantsTable">
+          <thead>
+            <tr>
+              <th>Naam</th>
+              <th>Geslacht</th>
+              <th>Score (m)</th>
+              <th>Evenement</th>
+              <th>Tijd</th>
+              <th>Acties</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="6" class="empty-msg">Laden…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const alertSuccess = document.getElementById('alertSuccess');
+    const alertError = document.getElementById('alertError');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function showAlert(el, msg) {
+      el.textContent = msg || el.textContent;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    // ── Load today's table ──
+    async function loadTable() {
+      try {
+        const res = await fetch('/api/admin/today');
+        const rows = await res.json();
+        renderTable(rows);
+      } catch (e) {
+        console.error('Fout bij laden tabel:', e);
+      }
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById('tableBody');
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Nog geen deelnemers vandaag.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(row => `
+        <tr data-id="${row.id}">
+          <td>${esc(row.voornaam)} ${esc(row.achternaam)}</td>
+          <td>${esc(row.geslacht)}</td>
+          <td class="score-cell" data-score="${row.score_meters}">
+            <span class="score-display">${row.score_meters} m</span>
+            <input class="score-input" type="number" min="0" max="9999"
+                   value="${row.score_meters}" style="display:none">
+          </td>
+          <td>${esc(row.event_naam)}</td>
+          <td>${esc(row.tijd)}</td>
+          <td>
+            <button class="btn-edit" onclick="startEdit(this, ${row.id})">Bewerk</button>
+            <button class="btn-save" style="display:none" onclick="saveEdit(this, ${row.id})">Opslaan</button>
+            <button class="btn-cancel" style="display:none" onclick="cancelEdit(this, ${row.score_meters})">Annuleer</button>
+            <button class="btn-delete" onclick="deleteScore(${row.id})">Verwijder</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function esc(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Edit inline ──
+    function startEdit(btn, id) {
+      const row = btn.closest('tr');
+      row.querySelector('.score-display').style.display = 'none';
+      row.querySelector('.score-input').style.display = 'inline-block';
+      row.querySelector('.btn-edit').style.display = 'none';
+      row.querySelector('.btn-save').style.display = 'inline-block';
+      row.querySelector('.btn-cancel').style.display = 'inline-block';
+    }
+
+    function cancelEdit(btn, originalScore) {
+      const row = btn.closest('tr');
+      const input = row.querySelector('.score-input');
+      input.value = originalScore;
+      input.style.display = 'none';
+      row.querySelector('.score-display').style.display = 'inline';
+      row.querySelector('.btn-edit').style.display = 'inline-block';
+      row.querySelector('.btn-save').style.display = 'none';
+      row.querySelector('.btn-cancel').style.display = 'none';
+    }
+
+    async function saveEdit(btn, id) {
+      const row = btn.closest('tr');
+      const input = row.querySelector('.score-input');
+      const score = parseInt(input.value, 10);
+      if (isNaN(score) || score < 0 || score > 9999) {
+        alert('Score moet tussen 0 en 9999 zijn.');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/admin/score/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ score_meters: score }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          alert(data.error || 'Fout bij opslaan.');
+          return;
+        }
+        await loadTable();
+      } catch (e) {
+        alert('Netwerkfout. Probeer opnieuw.');
+      }
+    }
+
+    async function deleteScore(id) {
+      if (!confirm('Weet je zeker dat je deze score wilt verwijderen?')) return;
+      try {
+        const res = await fetch(`/api/admin/score/${id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const data = await res.json();
+          alert(data.error || 'Fout bij verwijderen.');
+          return;
+        }
+        await loadTable();
+      } catch (e) {
+        alert('Netwerkfout. Probeer opnieuw.');
+      }
+    }
+
+    // ── Register form ──
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertSuccess.style.display = 'none';
+      alertError.style.display = 'none';
+      submitBtn.disabled = true;
+
+      const formData = new FormData(e.target);
+      const body = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch('/api/admin/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showAlert(alertSuccess, '✓ Deelnemer succesvol geregistreerd!');
+          e.target.reset();
+          await loadTable();
+        } else {
+          const msg = data.errors ? data.errors.join(' ') : (data.error || 'Onbekende fout.');
+          showAlert(alertError, '✗ ' + msg);
+        }
+      } catch (err) {
+        showAlert(alertError, '✗ Netwerkfout. Controleer de verbinding.');
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    // ── Auto-refresh table every 30s ──
+    loadTable();
+    setInterval(loadTable, 30000);
+  </script>
+</body>
+</html>

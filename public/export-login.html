@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Export Login | Rexona x HYROX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-cyan: #00e5cc;
+      --accent-magenta: #ff00cc;
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.15);
+      --input-bg: rgba(0, 0, 0, 0.3);
+      --error-color: #ff4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(135deg, #0a3d3d 0%, #0d5c4d 40%, #00c9b1 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Gilroy', 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 400;
+      color: white;
+    }
+    .login-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 2.5rem 3rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+    .logo-area {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .logo-area img {
+      height: 64px;
+      width: auto;
+      margin-bottom: 0.75rem;
+      filter: brightness(0) invert(1);
+    }
+    .logo-area p {
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+    }
+    .badge {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.3rem 0.9rem;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 4px;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 0.5rem;
+    }
+    input[type="password"] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: white;
+      padding: 0.875rem 1rem;
+      font-size: 1rem;
+      font-weight: 300;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="password"]:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(0, 229, 204, 0.2);
+    }
+    button[type="submit"] {
+      width: 100%;
+      background: var(--accent-cyan);
+      color: #0a3d3d;
+      border: none;
+      border-radius: 8px;
+      padding: 0.9rem 2rem;
+      font-size: 1rem;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.5rem;
+    }
+    button[type="submit"]:hover {
+      background: #00f0d8;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(0, 229, 204, 0.4);
+    }
+    .error-msg {
+      display: none;
+      background: rgba(255, 68, 68, 0.15);
+      border: 1px solid var(--error-color);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: #ffaaaa;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="logo-area">
+      <img src="/Rexona_logo_2015.svg" alt="Rexona">
+      <p>x HYROX — 72 SEC. CHALLENGE</p>
+      <span class="badge">Data Export</span>
+    </div>
+    <div class="error-msg" id="errorMsg">Ongeldige inloggegevens. Probeer opnieuw.</div>
+    <form method="POST" action="/export/login">
+      <div class="form-group">
+        <label for="password">Wachtwoord</label>
+        <input type="password" id="password" name="password" required
+               autocomplete="current-password" autofocus>
+      </div>
+      <button type="submit">Inloggen</button>
+    </form>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    if (params.get('error')) {
+      document.getElementById('errorMsg').style.display = 'block';
+    }
+  </script>
+</body>
+</html>

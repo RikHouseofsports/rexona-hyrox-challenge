@@ -1,0 +1,17 @@
+# Environment variables — never commit
+.env
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+# Node modules
+node_modules/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*

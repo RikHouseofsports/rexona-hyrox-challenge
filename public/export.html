@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Export | Rexona x HYROX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-cyan: #00e5cc;
+      --accent-magenta: #ff00cc;
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.15);
+      --input-bg: rgba(0, 0, 0, 0.3);
+      --error-color: #ff4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(135deg, #0a3d3d 0%, #0d5c4d 40%, #00c9b1 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      font-family: 'Gilroy', 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 400;
+      color: white;
+      padding-bottom: 3rem;
+    }
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .header-brand img {
+      height: 40px;
+      width: auto;
+      filter: brightness(0) invert(1);
+    }
+    .header-brand p {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 0.1rem;
+    }
+    .logout-form button {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.7);
+      border-radius: 6px;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .logout-form button:hover {
+      border-color: var(--error-color);
+      color: var(--error-color);
+    }
+    /* Layout */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 0;
+    }
+    /* Card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent-cyan);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      flex: 1;
+      min-width: 160px;
+    }
+    label {
+      font-size: 0.72rem;
+      font-weight: 600;       /* Gilroy SemiBold */
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.6);
+    }
+    select, input[type="date"] {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 7px;
+      color: white;
+      padding: 0.65rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 300;       /* Gilroy Light */
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    select:focus, input[type="date"]:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(0,229,204,0.18);
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) opacity(0.5);
+      cursor: pointer;
+    }
+    select option { background: #0d3d3d; color: white; }
+    /* Buttons */
+    .btn-primary {
+      background: var(--accent-cyan);
+      color: #0a3d3d;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+    .btn-primary:hover {
+      background: #00f0d8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,229,204,0.35);
+    }
+    .btn-csv {
+      background: transparent;
+      border: 2px solid var(--accent-magenta);
+      color: var(--accent-magenta);
+      border-radius: 8px;
+      padding: 0.7rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+    .btn-csv:hover {
+      background: var(--accent-magenta);
+      color: white;
+      box-shadow: 0 4px 16px rgba(255,0,204,0.35);
+    }
+    .btn-reset {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.5);
+      border-radius: 8px;
+      padding: 0.7rem 1.2rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-reset:hover { color: white; border-color: rgba(255,255,255,0.5); }
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.5);
+    }
+    .stats-bar strong { color: var(--accent-cyan); }
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.68rem;
+      font-weight: 600;       /* Gilroy SemiBold */
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-cyan);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      white-space: nowrap;
+    }
+    td {
+      padding: 0.7rem 0.9rem;
+      font-weight: 300;       /* Gilroy Light */
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.04); }
+    .opt-in-ja  { color: var(--accent-cyan); font-weight: 600; }
+    .opt-in-nee { color: rgba(255,255,255,0.3); }
+    .score-val  { font-weight: 800; }
+    .empty-msg  {
+      text-align: center;
+      padding: 2.5rem;
+      color: rgba(255,255,255,0.3);
+      font-size: 0.9rem;
+    }
+    /* Loading state */
+    .loading { opacity: 0.5; font-style: italic; }
+    @media (max-width: 700px) {
+      .filter-bar { flex-direction: column; }
+      .filter-group { min-width: 100%; }
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-brand">
+      <img src="/Rexona_logo_2015.svg" alt="Rexona">
+      <p>x HYROX — Data Export — 72 SEC. CHALLENGE</p>
+    </div>
+    <form class="logout-form" method="POST" action="/export/logout">
+      <button type="submit">Uitloggen</button>
+    </form>
+  </header>
+
+  <div class="container">
+    <!-- Filters -->
+    <div class="card">
+      <div class="card-title">Filters</div>
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="filterEvent">Evenement</label>
+          <select id="filterEvent">
+            <option value="">Alle evenementen</option>
+            <option value="Mechelen">Mechelen</option>
+            <option value="Rotterdam">Rotterdam</option>
+            <option value="Heerenveen">Heerenveen</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterDate">Datum</label>
+          <input type="date" id="filterDate">
+        </div>
+        <div class="filter-group">
+          <label for="filterGeslacht">Geslacht</label>
+          <select id="filterGeslacht">
+            <option value="">Alle</option>
+            <option value="Man">Man</option>
+            <option value="Vrouw">Vrouw</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="applyFilters()">Filter toepassen</button>
+        <button class="btn-reset" onclick="resetFilters()">Reset</button>
+        <button class="btn-csv" onclick="downloadCSV()">↓ Download CSV</button>
+      </div>
+    </div>
+
+    <!-- Data table -->
+    <div class="card">
+      <div class="stats-bar">
+        <span>Totaal: <strong id="rowCount">—</strong> deelnemers</span>
+        <span id="filterSummary"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Voornaam</th>
+              <th>Achternaam</th>
+              <th>E-mail</th>
+              <th>Geslacht</th>
+              <th>Score (m)</th>
+              <th>Evenement</th>
+              <th>Datum</th>
+              <th>Opt-in</th>
+            </tr>
+          </thead>
+          <tbody id="exportTableBody">
+            <tr><td colspan="8" class="empty-msg loading">Laden…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentParams = '';
+
+    function buildParams() {
+      const p = new URLSearchParams();
+      const event = document.getElementById('filterEvent').value;
+      const date = document.getElementById('filterDate').value;
+      const geslacht = document.getElementById('filterGeslacht').value;
+      if (event) p.set('event', event);
+      if (date) p.set('date', date);
+      if (geslacht) p.set('geslacht', geslacht);
+      return p.toString();
+    }
+
+    async function loadData(params) {
+      const tbody = document.getElementById('exportTableBody');
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-msg loading">Laden…</td></tr>';
+      currentParams = params;
+
+      try {
+        const url = '/api/export/data' + (params ? '?' + params : '');
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Fout bij ophalen data');
+        const rows = await res.json();
+
+        document.getElementById('rowCount').textContent = rows.length;
+        updateFilterSummary();
+
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">Geen resultaten voor deze filters.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = rows.map(row => `
+          <tr>
+            <td>${esc(row.voornaam)}</td>
+            <td>${esc(row.achternaam)}</td>
+            <td>${esc(row.email)}</td>
+            <td>${esc(row.geslacht)}</td>
+            <td class="score-val">${row.score_meters}</td>
+            <td>${esc(row.event_naam)}</td>
+            <td>${esc(row.datum)}</td>
+            <td class="${row.opt_in ? 'opt-in-ja' : 'opt-in-nee'}">${row.opt_in ? 'Ja' : 'Nee'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-msg">Fout bij laden data. Probeer opnieuw.</td></tr>`;
+        document.getElementById('rowCount').textContent = '—';
+      }
+    }
+
+    function updateFilterSummary() {
+      const parts = [];
+      const event = document.getElementById('filterEvent').value;
+      const date = document.getElementById('filterDate').value;
+      const geslacht = document.getElementById('filterGeslacht').value;
+      if (event) parts.push(event);
+      if (date) parts.push(date);
+      if (geslacht) parts.push(geslacht);
+      document.getElementById('filterSummary').textContent =
+        parts.length ? 'Gefilterd op: ' + parts.join(', ') : 'Alle data';
+    }
+
+    function applyFilters() {
+      loadData(buildParams());
+    }
+
+    function resetFilters() {
+      document.getElementById('filterEvent').value = '';
+      document.getElementById('filterDate').value = '';
+      document.getElementById('filterGeslacht').value = '';
+      loadData('');
+    }
+
+    function downloadCSV() {
+      const params = buildParams();
+      window.location = '/api/export/csv' + (params ? '?' + params : '');
+    }
+
+    function esc(str) {
+      return String(str === null || str === undefined ? '' : str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Allow pressing Enter in filter fields to apply
+    ['filterEvent','filterDate','filterGeslacht'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') applyFilters();
+      });
+    });
+
+    // Initial load
+    loadData('');
+  </script>
+</body>
+</html>
