@@ -166,7 +166,6 @@
     .lb-table {
       width: 100%;
       border-collapse: collapse;
-      flex: 1;
     }
     .lb-table tr {
       border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -174,24 +173,37 @@
     }
     .lb-table tr:last-child { border-bottom: none; }
     .lb-table td {
-      padding: 0.9rem 0;
+      padding: 0.65rem 0;
       font-size: 1.35rem;
       vertical-align: middle;
     }
     .col-rank {
       width: 3.5rem;
-      font-weight: 800;       /* ExtraBold for rank numbers */
+      font-weight: 800;
       color: rgba(255,255,255,0.35);
       font-size: 1rem;
       letter-spacing: 0.05em;
     }
     .col-naam {
-      font-weight: 600;       /* Gilroy SemiBold */
+      font-weight: 600;
       padding-left: 0.5rem;
+    }
+    .col-nat {
+      white-space: nowrap;
+      padding: 0.65rem 1.5rem 0.65rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.55);
+    }
+    .nat-flag {
+      font-size: 1.15rem;
+      margin-right: 0.35rem;
+      vertical-align: middle;
     }
     .col-score {
       text-align: right;
-      font-weight: 800;       /* Gilroy ExtraBold */
+      font-weight: 800;
       font-size: 1.5rem;
       letter-spacing: 0.02em;
       white-space: nowrap;
@@ -287,16 +299,63 @@
   <footer>HYROX Benelux &nbsp;|&nbsp; Powered by Rexona</footer>
 
   <script>
-    const SWITCH_INTERVAL = 7000; // 7 seconds
-    let currentGender = 'men'; // 'men' | 'women'
+    const SWITCH_INTERVAL = 7000;
+    let currentGender = 'men';
     let leaderboard = { men: [], women: [] };
     let switchTimer = null;
+
+    const COUNTRY_MAP = {
+      'Nederland':       { code: 'NED', flag: '🇳🇱' },
+      'België':          { code: 'BEL', flag: '🇧🇪' },
+      'Duitsland':       { code: 'GER', flag: '🇩🇪' },
+      'Groot-Brittannië':{ code: 'GBR', flag: '🇬🇧' },
+      'Australië':       { code: 'AUS', flag: '🇦🇺' },
+      'Canada':          { code: 'CAN', flag: '🇨🇦' },
+      'Denemarken':      { code: 'DEN', flag: '🇩🇰' },
+      'Finland':         { code: 'FIN', flag: '🇫🇮' },
+      'Frankrijk':       { code: 'FRA', flag: '🇫🇷' },
+      'Griekenland':     { code: 'GRE', flag: '🇬🇷' },
+      'Hongarije':       { code: 'HUN', flag: '🇭🇺' },
+      'Ierland':         { code: 'IRL', flag: '🇮🇪' },
+      'Italië':          { code: 'ITA', flag: '🇮🇹' },
+      'Japan':           { code: 'JPN', flag: '🇯🇵' },
+      'Kroatië':         { code: 'CRO', flag: '🇭🇷' },
+      'Letland':         { code: 'LAT', flag: '🇱🇻' },
+      'Litouwen':        { code: 'LTU', flag: '🇱🇹' },
+      'Luxemburg':       { code: 'LUX', flag: '🇱🇺' },
+      'Mexico':          { code: 'MEX', flag: '🇲🇽' },
+      'Nieuw-Zeeland':   { code: 'NZL', flag: '🇳🇿' },
+      'Noorwegen':       { code: 'NOR', flag: '🇳🇴' },
+      'Oekraïne':        { code: 'UKR', flag: '🇺🇦' },
+      'Oostenrijk':      { code: 'AUT', flag: '🇦🇹' },
+      'Polen':           { code: 'POL', flag: '🇵🇱' },
+      'Portugal':        { code: 'POR', flag: '🇵🇹' },
+      'Roemenië':        { code: 'ROU', flag: '🇷🇴' },
+      'Rusland':         { code: 'RUS', flag: '🇷🇺' },
+      'Singapore':       { code: 'SGP', flag: '🇸🇬' },
+      'Slovenië':        { code: 'SLO', flag: '🇸🇮' },
+      'Slowakije':       { code: 'SVK', flag: '🇸🇰' },
+      'Spanje':          { code: 'ESP', flag: '🇪🇸' },
+      'Tsjechië':        { code: 'CZE', flag: '🇨🇿' },
+      'Turkije':         { code: 'TUR', flag: '🇹🇷' },
+      'USA':             { code: 'USA', flag: '🇺🇸' },
+      'Zweden':          { code: 'SWE', flag: '🇸🇪' },
+      'Zwitserland':     { code: 'SUI', flag: '🇨🇭' },
+      'Zuid-Afrika':     { code: 'RSA', flag: '🇿🇦' },
+      'Zuid-Korea':      { code: 'KOR', flag: '🇰🇷' },
+    };
+
+    function getNat(nationaliteit) {
+      const c = COUNTRY_MAP[nationaliteit];
+      if (!c) return '';
+      return `<span class="nat-flag">${c.flag}</span>${c.code}`;
+    }
 
     // ── Render ──
     function renderRows(data, tableId) {
       const tbody = document.querySelector(`#${tableId} tbody`);
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Nog geen scores</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Nog geen scores</td></tr>`;
         return;
       }
       tbody.innerHTML = data.map((row, i) => {
@@ -306,6 +365,7 @@
           <tr class="${rankClass}">
             <td class="col-rank">${rank}</td>
             <td class="col-naam">${esc(row.naam)}</td>
+            <td class="col-nat">${getNat(row.nationaliteit)}</td>
             <td class="col-score">${row.score_meters}<span class="score-unit">m</span></td>
           </tr>
         `;

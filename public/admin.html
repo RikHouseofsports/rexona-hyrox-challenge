@@ -356,6 +356,54 @@
             </select>
           </div>
           <div class="form-group">
+            <label for="nationaliteit">Nationaliteit</label>
+            <select id="nationaliteit" name="nationaliteit" required>
+              <option value="">— Selecteer land —</option>
+              <optgroup label="Meest gekozen">
+                <option value="Nederland">🇳🇱 Nederland</option>
+                <option value="België">🇧🇪 België</option>
+                <option value="Duitsland">🇩🇪 Duitsland</option>
+                <option value="Groot-Brittannië">🇬🇧 Groot-Brittannië</option>
+              </optgroup>
+              <optgroup label="Overige landen">
+                <option value="Australië">🇦🇺 Australië</option>
+                <option value="Canada">🇨🇦 Canada</option>
+                <option value="Denemarken">🇩🇰 Denemarken</option>
+                <option value="Finland">🇫🇮 Finland</option>
+                <option value="Frankrijk">🇫🇷 Frankrijk</option>
+                <option value="Griekenland">🇬🇷 Griekenland</option>
+                <option value="Hongarije">🇭🇺 Hongarije</option>
+                <option value="Ierland">🇮🇪 Ierland</option>
+                <option value="Italië">🇮🇹 Italië</option>
+                <option value="Japan">🇯🇵 Japan</option>
+                <option value="Kroatië">🇭🇷 Kroatië</option>
+                <option value="Letland">🇱🇻 Letland</option>
+                <option value="Litouwen">🇱🇹 Litouwen</option>
+                <option value="Luxemburg">🇱🇺 Luxemburg</option>
+                <option value="Mexico">🇲🇽 Mexico</option>
+                <option value="Nieuw-Zeeland">🇳🇿 Nieuw-Zeeland</option>
+                <option value="Noorwegen">🇳🇴 Noorwegen</option>
+                <option value="Oekraïne">🇺🇦 Oekraïne</option>
+                <option value="Oostenrijk">🇦🇹 Oostenrijk</option>
+                <option value="Polen">🇵🇱 Polen</option>
+                <option value="Portugal">🇵🇹 Portugal</option>
+                <option value="Roemenië">🇷🇴 Roemenië</option>
+                <option value="Rusland">🇷🇺 Rusland</option>
+                <option value="Singapore">🇸🇬 Singapore</option>
+                <option value="Slovenië">🇸🇮 Slovenië</option>
+                <option value="Slowakije">🇸🇰 Slowakije</option>
+                <option value="Spanje">🇪🇸 Spanje</option>
+                <option value="Tsjechië">🇨🇿 Tsjechië</option>
+                <option value="Turkije">🇹🇷 Turkije</option>
+                <option value="USA">🇺🇸 USA</option>
+                <option value="Zweden">🇸🇪 Zweden</option>
+                <option value="Zwitserland">🇨🇭 Zwitserland</option>
+                <option value="Zuid-Afrika">🇿🇦 Zuid-Afrika</option>
+                <option value="Zuid-Korea">🇰🇷 Zuid-Korea</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="email">E-mailadres</label>
             <input type="email" id="email" name="email" maxlength="200" required autocomplete="off">
           </div>
@@ -396,6 +444,7 @@
             <tr>
               <th>Naam</th>
               <th>Geslacht</th>
+              <th>Land</th>
               <th>Score (m)</th>
               <th>Evenement</th>
               <th>Tijd</th>
@@ -435,13 +484,14 @@
     function renderTable(rows) {
       const tbody = document.getElementById('tableBody');
       if (!rows || rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Nog geen deelnemers vandaag.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">Nog geen deelnemers vandaag.</td></tr>';
         return;
       }
       tbody.innerHTML = rows.map(row => `
         <tr data-id="${row.id}">
           <td>${esc(row.voornaam)} ${esc(row.achternaam)}</td>
           <td>${esc(row.geslacht)}</td>
+          <td>${esc(row.nationaliteit || '—')}</td>
           <td class="score-cell" data-score="${row.score_meters}">
             <span class="score-display">${row.score_meters} m</span>
             <input class="score-input" type="number" min="0" max="9999"

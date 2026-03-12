@@ -41,12 +41,13 @@ db.exec('PRAGMA foreign_keys = ON');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS participants (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    voornaam   TEXT NOT NULL,
-    achternaam TEXT NOT NULL,
-    email      TEXT NOT NULL,
-    opt_in     INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    voornaam       TEXT NOT NULL,
+    achternaam     TEXT NOT NULL,
+    email          TEXT NOT NULL,
+    nationaliteit  TEXT NOT NULL DEFAULT 'Onbekend',
+    opt_in         INTEGER NOT NULL DEFAULT 0,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS scores (
@@ -60,16 +61,21 @@ db.exec(`
   );
 `);
 
+// Migration: add nationaliteit column to existing databases
+try {
+  db.exec(`ALTER TABLE participants ADD COLUMN nationaliteit TEXT NOT NULL DEFAULT 'Onbekend'`);
+} catch (e) { /* column already exists */ }
+
 // All prepared statements — no string concatenation of user values anywhere
 const stmts = {
   insertParticipant: db.prepare(
-    `INSERT INTO participants (voornaam, achternaam, email, opt_in) VALUES (?, ?, ?, ?)`
+    `INSERT INTO participants (voornaam, achternaam, email, nationaliteit, opt_in) VALUES (?, ?, ?, ?, ?)`
   ),
   insertScore: db.prepare(
     `INSERT INTO scores (participant_id, geslacht, score_meters, event_naam) VALUES (?, ?, ?, ?)`
   ),
   getTodayScores: db.prepare(`
-    SELECT s.id, p.voornaam, p.achternaam, s.geslacht, s.score_meters, s.event_naam,
+    SELECT s.id, p.voornaam, p.achternaam, p.nationaliteit, s.geslacht, s.score_meters, s.event_naam,
            strftime('%H:%M', s.created_at) AS tijd
     FROM scores s
     JOIN participants p ON s.participant_id = p.id
@@ -79,6 +85,7 @@ const stmts = {
   getLeaderboardMen: db.prepare(`
     SELECT s.id,
            p.voornaam || ' ' || substr(p.achternaam, 1, 1) || '.' AS naam,
+           p.nationaliteit,
            s.score_meters
     FROM scores s
     JOIN participants p ON s.participant_id = p.id
@@ -89,6 +96,7 @@ const stmts = {
   getLeaderboardWomen: db.prepare(`
     SELECT s.id,
            p.voornaam || ' ' || substr(p.achternaam, 1, 1) || '.' AS naam,
+           p.nationaliteit,
            s.score_meters
     FROM scores s
     JOIN participants p ON s.participant_id = p.id
@@ -106,7 +114,7 @@ function registerTransaction(data) {
   db.exec('BEGIN');
   try {
     const p = stmts.insertParticipant.run(
-      data.voornaam, data.achternaam, data.email, data.opt_in
+      data.voornaam, data.achternaam, data.email, data.nationaliteit, data.opt_in
     );
     stmts.insertScore.run(
       p.lastInsertRowid, data.geslacht, data.score_meters, data.event_naam
@@ -175,13 +183,23 @@ function requireExport(req, res, next) {
 // ─────────────────────────────────────────────
 // Input validation
 // ─────────────────────────────────────────────
+const VALID_NATIONALITIES = new Set([
+  'Nederland','België','Duitsland','Groot-Brittannië',
+  'Australië','Canada','Denemarken','Finland','Frankrijk','Griekenland',
+  'Hongarije','Ierland','Italië','Japan','Kroatië','Letland','Litouwen',
+  'Luxemburg','Mexico','Nieuw-Zeeland','Noorwegen','Oekraïne','Oostenrijk',
+  'Polen','Portugal','Roemenië','Rusland','Singapore','Slovenië','Slowakije',
+  'Spanje','Tsjechië','Turkije','USA','Zweden','Zwitserland','Zuid-Afrika','Zuid-Korea',
+]);
+
 function validateRegistration(body) {
   const errors = [];
   const VALID_EVENTS = ['Mechelen', 'Rotterdam', 'Heerenveen'];
 
-  const voornaam   = typeof body.voornaam   === 'string' ? body.voornaam.trim()   : '';
-  const achternaam = typeof body.achternaam === 'string' ? body.achternaam.trim() : '';
-  const email      = typeof body.email      === 'string' ? body.email.trim()      : '';
+  const voornaam      = typeof body.voornaam      === 'string' ? body.voornaam.trim()      : '';
+  const achternaam    = typeof body.achternaam    === 'string' ? body.achternaam.trim()    : '';
+  const email         = typeof body.email         === 'string' ? body.email.trim()         : '';
+  const nationaliteit = typeof body.nationaliteit === 'string' ? body.nationaliteit.trim() : '';
 
   if (voornaam.length < 1 || voornaam.length > 50)
     errors.push('Voornaam is verplicht (max 50 tekens).');
@@ -191,6 +209,8 @@ function validateRegistration(body) {
     errors.push('Geldig e-mailadres is verplicht.');
   if (!['Man', 'Vrouw'].includes(body.geslacht))
     errors.push('Geslacht moet Man of Vrouw zijn.');
+  if (!VALID_NATIONALITIES.has(nationaliteit))
+    errors.push('Selecteer een geldig land.');
 
   const score = parseInt(body.score_meters, 10);
   if (isNaN(score) || score < 0 || score > 9999)
@@ -208,6 +228,7 @@ function validateRegistration(body) {
       voornaam,
       achternaam,
       email,
+      nationaliteit,
       geslacht:     body.geslacht,
       score_meters: isNaN(score) ? 0 : score,
       event_naam:   body.event_naam,
@@ -383,7 +404,7 @@ app.get('/export', requireExport, (req, res) => {
 function getExportRows(query) {
   const { event, date, geslacht } = query;
   let sql = `
-    SELECT p.voornaam, p.achternaam, p.email, s.geslacht,
+    SELECT p.voornaam, p.achternaam, p.email, p.nationaliteit, s.geslacht,
            s.score_meters, s.event_naam,
            strftime('%Y-%m-%d', s.created_at) AS datum,
            p.opt_in
@@ -430,13 +451,14 @@ app.get('/api/export/csv', requireExport, (req, res) => {
 
     // UTF-8 BOM — critical for correct display in Dutch Excel
     let csv = '\uFEFF';
-    csv += 'Voornaam,Achternaam,Email,Geslacht,Score (meters),Evenement,Datum,Opt-in\n';
+    csv += 'Voornaam,Achternaam,Email,Nationaliteit,Geslacht,Score (meters),Evenement,Datum,Opt-in\n';
 
     rows.forEach((row) => {
       csv += [
         escapeCsv(row.voornaam),
         escapeCsv(row.achternaam),
         escapeCsv(row.email),
+        escapeCsv(row.nationaliteit),
         escapeCsv(row.geslacht),
         escapeCsv(row.score_meters),
         escapeCsv(row.event_naam),
