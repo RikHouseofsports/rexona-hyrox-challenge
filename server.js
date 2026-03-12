@@ -84,7 +84,7 @@ const stmts = {
   `),
   getLeaderboardMen: db.prepare(`
     SELECT s.id,
-           p.voornaam || ' ' || substr(p.achternaam, 1, 1) || '.' AS naam,
+           p.voornaam || ' ' || p.achternaam AS naam,
            p.nationaliteit,
            s.score_meters
     FROM scores s
@@ -95,7 +95,7 @@ const stmts = {
   `),
   getLeaderboardWomen: db.prepare(`
     SELECT s.id,
-           p.voornaam || ' ' || substr(p.achternaam, 1, 1) || '.' AS naam,
+           p.voornaam || ' ' || p.achternaam AS naam,
            p.nationaliteit,
            s.score_meters
     FROM scores s
