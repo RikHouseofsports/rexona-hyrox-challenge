@@ -197,9 +197,13 @@
       color: rgba(255,255,255,0.55);
     }
     .nat-flag {
-      font-size: 1.15rem;
-      margin-right: 0.35rem;
+      width: 28px;
+      height: 20px;
+      margin-right: 0.4rem;
       vertical-align: middle;
+      border-radius: 2px;
+      object-fit: cover;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
     .col-score {
       text-align: right;
@@ -305,50 +309,50 @@
     let switchTimer = null;
 
     const COUNTRY_MAP = {
-      'Nederland':       { code: 'NED', flag: '🇳🇱' },
-      'België':          { code: 'BEL', flag: '🇧🇪' },
-      'Duitsland':       { code: 'GER', flag: '🇩🇪' },
-      'Groot-Brittannië':{ code: 'GBR', flag: '🇬🇧' },
-      'Australië':       { code: 'AUS', flag: '🇦🇺' },
-      'Canada':          { code: 'CAN', flag: '🇨🇦' },
-      'Denemarken':      { code: 'DEN', flag: '🇩🇰' },
-      'Finland':         { code: 'FIN', flag: '🇫🇮' },
-      'Frankrijk':       { code: 'FRA', flag: '🇫🇷' },
-      'Griekenland':     { code: 'GRE', flag: '🇬🇷' },
-      'Hongarije':       { code: 'HUN', flag: '🇭🇺' },
-      'Ierland':         { code: 'IRL', flag: '🇮🇪' },
-      'Italië':          { code: 'ITA', flag: '🇮🇹' },
-      'Japan':           { code: 'JPN', flag: '🇯🇵' },
-      'Kroatië':         { code: 'CRO', flag: '🇭🇷' },
-      'Letland':         { code: 'LAT', flag: '🇱🇻' },
-      'Litouwen':        { code: 'LTU', flag: '🇱🇹' },
-      'Luxemburg':       { code: 'LUX', flag: '🇱🇺' },
-      'Mexico':          { code: 'MEX', flag: '🇲🇽' },
-      'Nieuw-Zeeland':   { code: 'NZL', flag: '🇳🇿' },
-      'Noorwegen':       { code: 'NOR', flag: '🇳🇴' },
-      'Oekraïne':        { code: 'UKR', flag: '🇺🇦' },
-      'Oostenrijk':      { code: 'AUT', flag: '🇦🇹' },
-      'Polen':           { code: 'POL', flag: '🇵🇱' },
-      'Portugal':        { code: 'POR', flag: '🇵🇹' },
-      'Roemenië':        { code: 'ROU', flag: '🇷🇴' },
-      'Rusland':         { code: 'RUS', flag: '🇷🇺' },
-      'Singapore':       { code: 'SGP', flag: '🇸🇬' },
-      'Slovenië':        { code: 'SLO', flag: '🇸🇮' },
-      'Slowakije':       { code: 'SVK', flag: '🇸🇰' },
-      'Spanje':          { code: 'ESP', flag: '🇪🇸' },
-      'Tsjechië':        { code: 'CZE', flag: '🇨🇿' },
-      'Turkije':         { code: 'TUR', flag: '🇹🇷' },
-      'USA':             { code: 'USA', flag: '🇺🇸' },
-      'Zweden':          { code: 'SWE', flag: '🇸🇪' },
-      'Zwitserland':     { code: 'SUI', flag: '🇨🇭' },
-      'Zuid-Afrika':     { code: 'RSA', flag: '🇿🇦' },
-      'Zuid-Korea':      { code: 'KOR', flag: '🇰🇷' },
+      'Nederland':       { code: 'NED', iso: 'nl' },
+      'België':          { code: 'BEL', iso: 'be' },
+      'Duitsland':       { code: 'GER', iso: 'de' },
+      'Groot-Brittannië':{ code: 'GBR', iso: 'gb' },
+      'Australië':       { code: 'AUS', iso: 'au' },
+      'Canada':          { code: 'CAN', iso: 'ca' },
+      'Denemarken':      { code: 'DEN', iso: 'dk' },
+      'Finland':         { code: 'FIN', iso: 'fi' },
+      'Frankrijk':       { code: 'FRA', iso: 'fr' },
+      'Griekenland':     { code: 'GRE', iso: 'gr' },
+      'Hongarije':       { code: 'HUN', iso: 'hu' },
+      'Ierland':         { code: 'IRL', iso: 'ie' },
+      'Italië':          { code: 'ITA', iso: 'it' },
+      'Japan':           { code: 'JPN', iso: 'jp' },
+      'Kroatië':         { code: 'CRO', iso: 'hr' },
+      'Letland':         { code: 'LAT', iso: 'lv' },
+      'Litouwen':        { code: 'LTU', iso: 'lt' },
+      'Luxemburg':       { code: 'LUX', iso: 'lu' },
+      'Mexico':          { code: 'MEX', iso: 'mx' },
+      'Nieuw-Zeeland':   { code: 'NZL', iso: 'nz' },
+      'Noorwegen':       { code: 'NOR', iso: 'no' },
+      'Oekraïne':        { code: 'UKR', iso: 'ua' },
+      'Oostenrijk':      { code: 'AUT', iso: 'at' },
+      'Polen':           { code: 'POL', iso: 'pl' },
+      'Portugal':        { code: 'POR', iso: 'pt' },
+      'Roemenië':        { code: 'ROU', iso: 'ro' },
+      'Rusland':         { code: 'RUS', iso: 'ru' },
+      'Singapore':       { code: 'SGP', iso: 'sg' },
+      'Slovenië':        { code: 'SLO', iso: 'si' },
+      'Slowakije':       { code: 'SVK', iso: 'sk' },
+      'Spanje':          { code: 'ESP', iso: 'es' },
+      'Tsjechië':        { code: 'CZE', iso: 'cz' },
+      'Turkije':         { code: 'TUR', iso: 'tr' },
+      'USA':             { code: 'USA', iso: 'us' },
+      'Zweden':          { code: 'SWE', iso: 'se' },
+      'Zwitserland':     { code: 'SUI', iso: 'ch' },
+      'Zuid-Afrika':     { code: 'RSA', iso: 'za' },
+      'Zuid-Korea':      { code: 'KOR', iso: 'kr' },
     };
 
     function getNat(nationaliteit) {
       const c = COUNTRY_MAP[nationaliteit];
       if (!c) return '';
-      return `<span class="nat-flag">${c.flag}</span>${c.code}`;
+      return `<img class="nat-flag" src="https://flagcdn.com/w40/${c.iso}.png" alt="${c.code}">${c.code}`;
     }
 
     // ── Render ──
