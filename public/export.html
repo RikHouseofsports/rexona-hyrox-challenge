@@ -297,9 +297,9 @@
             <option value="Vrouw">Vrouw</option>
           </select>
         </div>
-        <button class="btn-primary" onclick="applyFilters()">Filter toepassen</button>
-        <button class="btn-reset" onclick="resetFilters()">Reset</button>
-        <button class="btn-csv" onclick="downloadCSV()">↓ Download CSV</button>
+        <button class="btn-primary" id="btnApply">Filter toepassen</button>
+        <button class="btn-reset" id="btnReset">Reset</button>
+        <button class="btn-csv" id="btnCSV">&darr; Download CSV</button>
       </div>
     </div>
 
@@ -316,6 +316,7 @@
               <th>Voornaam</th>
               <th>Achternaam</th>
               <th>E-mail</th>
+              <th>Nationaliteit</th>
               <th>Geslacht</th>
               <th>Score (m)</th>
               <th>Evenement</th>
@@ -324,107 +325,13 @@
             </tr>
           </thead>
           <tbody id="exportTableBody">
-            <tr><td colspan="8" class="empty-msg loading">Laden…</td></tr>
+            <tr><td colspan="9" class="empty-msg loading">Laden…</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <script>
-    let currentParams = '';
-
-    function buildParams() {
-      const p = new URLSearchParams();
-      const event = document.getElementById('filterEvent').value;
-      const date = document.getElementById('filterDate').value;
-      const geslacht = document.getElementById('filterGeslacht').value;
-      if (event) p.set('event', event);
-      if (date) p.set('date', date);
-      if (geslacht) p.set('geslacht', geslacht);
-      return p.toString();
-    }
-
-    async function loadData(params) {
-      const tbody = document.getElementById('exportTableBody');
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-msg loading">Laden…</td></tr>';
-      currentParams = params;
-
-      try {
-        const url = '/api/export/data' + (params ? '?' + params : '');
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Fout bij ophalen data');
-        const rows = await res.json();
-
-        document.getElementById('rowCount').textContent = rows.length;
-        updateFilterSummary();
-
-        if (rows.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">Geen resultaten voor deze filters.</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = rows.map(row => `
-          <tr>
-            <td>${esc(row.voornaam)}</td>
-            <td>${esc(row.achternaam)}</td>
-            <td>${esc(row.email)}</td>
-            <td>${esc(row.geslacht)}</td>
-            <td class="score-val">${row.score_meters}</td>
-            <td>${esc(row.event_naam)}</td>
-            <td>${esc(row.datum)}</td>
-            <td class="${row.opt_in ? 'opt-in-ja' : 'opt-in-nee'}">${row.opt_in ? 'Ja' : 'Nee'}</td>
-          </tr>
-        `).join('');
-      } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-msg">Fout bij laden data. Probeer opnieuw.</td></tr>`;
-        document.getElementById('rowCount').textContent = '—';
-      }
-    }
-
-    function updateFilterSummary() {
-      const parts = [];
-      const event = document.getElementById('filterEvent').value;
-      const date = document.getElementById('filterDate').value;
-      const geslacht = document.getElementById('filterGeslacht').value;
-      if (event) parts.push(event);
-      if (date) parts.push(date);
-      if (geslacht) parts.push(geslacht);
-      document.getElementById('filterSummary').textContent =
-        parts.length ? 'Gefilterd op: ' + parts.join(', ') : 'Alle data';
-    }
-
-    function applyFilters() {
-      loadData(buildParams());
-    }
-
-    function resetFilters() {
-      document.getElementById('filterEvent').value = '';
-      document.getElementById('filterDate').value = '';
-      document.getElementById('filterGeslacht').value = '';
-      loadData('');
-    }
-
-    function downloadCSV() {
-      const params = buildParams();
-      window.location = '/api/export/csv' + (params ? '?' + params : '');
-    }
-
-    function esc(str) {
-      return String(str === null || str === undefined ? '' : str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    // Allow pressing Enter in filter fields to apply
-    ['filterEvent','filterDate','filterGeslacht'].forEach(id => {
-      document.getElementById(id).addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') applyFilters();
-      });
-    });
-
-    // Initial load
-    loadData('');
-  </script>
+  <script src="/js/export.js"></script>
 </body>
 </html>

@@ -25,12 +25,27 @@ if (!process.env.ADMIN_PASSWORD || !process.env.EXPORT_PASSWORD) {
   console.error('ERROR: ADMIN_PASSWORD and EXPORT_PASSWORD environment variables are required.');
   process.exit(1);
 }
+if (IS_PROD && !process.env.SESSION_SECRET) {
+  console.error('ERROR: SESSION_SECRET must be set in production.');
+  process.exit(1);
+}
 
 // ─────────────────────────────────────────────
-// Hash passwords at startup (never stored to disk)
+// Security event logging
 // ─────────────────────────────────────────────
-const ADMIN_HASH = bcrypt.hashSync(process.env.ADMIN_PASSWORD, 12);
-const EXPORT_HASH = bcrypt.hashSync(process.env.EXPORT_PASSWORD, 12);
+function logSecurity(event, details) {
+  console.log(JSON.stringify({
+    type: 'security',
+    event,
+    ...details,
+    timestamp: new Date().toISOString(),
+  }));
+}
+
+// ─────────────────────────────────────────────
+// Hash passwords at startup (async — non-blocking)
+// ─────────────────────────────────────────────
+let ADMIN_HASH, EXPORT_HASH;
 
 // ─────────────────────────────────────────────
 // Database (node:sqlite — built into Node >= 22.5)
@@ -132,10 +147,39 @@ function registerTransaction(data) {
 const app = express();
 const httpServer = http.createServer(app);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Disable fingerprinting header
+app.disable('x-powered-by');
+
+// ─────────────────────────────────────────────
+// Security headers
+// ─────────────────────────────────────────────
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src 'self' https://flagcdn.com data:; " +
+    "connect-src 'self' wss: ws:; " +
+    "frame-ancestors 'none';"
+  );
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  if (IS_PROD) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// NOTE: Default MemoryStore is not production-ready (memory leak, no persistence).
+// For production, use connect-sqlite3, connect-redis, or similar.
 app.use(session({
   secret: SESSION_SECRET,
   resave: false,
@@ -240,7 +284,19 @@ function validateRegistration(body) {
 // ─────────────────────────────────────────────
 // WebSocket server
 // ─────────────────────────────────────────────
-const wss = new WebSocketServer({ server: httpServer });
+const wss = new WebSocketServer({
+  server: httpServer,
+  verifyClient: (info) => {
+    // In production, only allow connections from our own origin
+    if (!IS_PROD) return true;
+    const origin = info.origin || info.req.headers.origin;
+    if (!origin) return true; // Allow no-origin (non-browser clients, same-origin)
+    try {
+      const allowed = process.env.ALLOWED_ORIGIN || `https://${info.req.headers.host}`;
+      return origin === allowed;
+    } catch { return false; }
+  },
+});
 
 function broadcastLeaderboardUpdate() {
   const payload = JSON.stringify({
@@ -284,17 +340,22 @@ wss.on('close', () => clearInterval(heartbeatInterval));
 // Routes — Admin
 // ─────────────────────────────────────────────
 
-app.get('/admin/login', (req, res) => {
+app.get('/admin/login', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
 });
 
-app.post('/admin/login', loginLimiter, (req, res) => {
+app.post('/admin/login', loginLimiter, async (req, res) => {
   const password = typeof req.body.password === 'string' ? req.body.password : '';
-  const valid = bcrypt.compareSync(password, ADMIN_HASH);
+  const valid = await bcrypt.compare(password, ADMIN_HASH);
   if (valid) {
-    req.session.adminAuthenticated = true;
-    req.session.save(() => res.redirect('/admin'));
+    logSecurity('login_success', { role: 'admin', ip: req.ip });
+    req.session.regenerate((err) => {
+      if (err) return res.redirect('/admin/login?error=1');
+      req.session.adminAuthenticated = true;
+      req.session.save(() => res.redirect('/admin'));
+    });
   } else {
+    logSecurity('login_failed', { role: 'admin', ip: req.ip, userAgent: req.get('user-agent') });
     res.redirect('/admin/login?error=1');
   }
 });
@@ -303,11 +364,11 @@ app.post('/admin/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/admin/login'));
 });
 
-app.get('/admin', requireAdmin, (req, res) => {
+app.get('/admin', requireAdmin, (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-app.get('/api/admin/today', requireAdmin, (req, res) => {
+app.get('/api/admin/today', requireAdmin, (_req, res) => {
   try {
     res.json(stmts.getTodayScores.all());
   } catch (err) {
@@ -322,6 +383,7 @@ app.post('/api/admin/register', requireAdmin, (req, res) => {
 
   try {
     registerTransaction(data);
+    logSecurity('admin_action', { action: 'participant_register', participant: data.voornaam + ' ' + data.achternaam, event: data.event_naam, ip: req.ip });
     broadcastLeaderboardUpdate();
     res.status(201).json({ success: true, message: 'Deelnemer succesvol geregistreerd.' });
   } catch (err) {
@@ -342,6 +404,7 @@ app.put('/api/admin/score/:id', requireAdmin, (req, res) => {
   if (!row) return res.status(404).json({ error: 'Score niet gevonden.' });
 
   stmts.updateScore.run(score, id);
+  logSecurity('admin_action', { action: 'score_edit', scoreId: id, newScore: score, ip: req.ip });
   broadcastLeaderboardUpdate();
   res.json({ success: true });
 });
@@ -354,6 +417,7 @@ app.delete('/api/admin/score/:id', requireAdmin, (req, res) => {
   if (!row) return res.status(404).json({ error: 'Score niet gevonden.' });
 
   stmts.deleteScore.run(id);
+  logSecurity('admin_action', { action: 'score_delete', scoreId: id, ip: req.ip });
   broadcastLeaderboardUpdate();
   res.json({ success: true });
 });
@@ -362,11 +426,11 @@ app.delete('/api/admin/score/:id', requireAdmin, (req, res) => {
 // Routes — Leaderboard (public)
 // ─────────────────────────────────────────────
 
-app.get('/leaderboard', (req, res) => {
+app.get('/leaderboard', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'leaderboard.html'));
 });
 
-app.get('/api/leaderboard', (req, res) => {
+app.get('/api/leaderboard', (_req, res) => {
   res.json({
     men:   stmts.getLeaderboardMen.all(),
     women: stmts.getLeaderboardWomen.all(),
@@ -377,17 +441,22 @@ app.get('/api/leaderboard', (req, res) => {
 // Routes — Export
 // ─────────────────────────────────────────────
 
-app.get('/export/login', (req, res) => {
+app.get('/export/login', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'export-login.html'));
 });
 
-app.post('/export/login', loginLimiter, (req, res) => {
+app.post('/export/login', loginLimiter, async (req, res) => {
   const password = typeof req.body.password === 'string' ? req.body.password : '';
-  const valid = bcrypt.compareSync(password, EXPORT_HASH);
+  const valid = await bcrypt.compare(password, EXPORT_HASH);
   if (valid) {
-    req.session.exportAuthenticated = true;
-    req.session.save(() => res.redirect('/export'));
+    logSecurity('login_success', { role: 'export', ip: req.ip });
+    req.session.regenerate((err) => {
+      if (err) return res.redirect('/export/login?error=1');
+      req.session.exportAuthenticated = true;
+      req.session.save(() => res.redirect('/export'));
+    });
   } else {
+    logSecurity('login_failed', { role: 'export', ip: req.ip, userAgent: req.get('user-agent') });
     res.redirect('/export/login?error=1');
   }
 });
@@ -396,7 +465,7 @@ app.post('/export/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/export/login'));
 });
 
-app.get('/export', requireExport, (req, res) => {
+app.get('/export', requireExport, (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'export.html'));
 });
 
@@ -433,7 +502,9 @@ function getExportRows(query) {
 
 app.get('/api/export/data', requireExport, (req, res) => {
   try {
-    res.json(getExportRows(req.query));
+    const rows = getExportRows(req.query);
+    logSecurity('export_access', { format: 'json', filters: req.query, rowCount: rows.length, ip: req.ip });
+    res.json(rows);
   } catch (err) {
     console.error('Export data error:', err);
     res.status(500).json({ error: 'Fout bij ophalen data.' });
@@ -443,6 +514,7 @@ app.get('/api/export/data', requireExport, (req, res) => {
 app.get('/api/export/csv', requireExport, (req, res) => {
   try {
     const rows = getExportRows(req.query);
+    logSecurity('export_access', { format: 'csv', filters: req.query, rowCount: rows.length, ip: req.ip });
     const escapeCsv = (val) =>
       `"${String(val === null || val === undefined ? '' : val).replace(/"/g, '""')}"`;
 
@@ -480,11 +552,19 @@ app.get('/api/export/csv', requireExport, (req, res) => {
 app.get('/', (req, res) => res.redirect('/leaderboard'));
 
 // ─────────────────────────────────────────────
-// Start server
+// Start server (async for non-blocking bcrypt hashing)
 // ─────────────────────────────────────────────
-httpServer.listen(PORT, () => {
-  console.log(`Rexona x HYROX Challenge running on port ${PORT}`);
-  console.log(`  Leaderboard: http://localhost:${PORT}/leaderboard`);
-  console.log(`  Admin:       http://localhost:${PORT}/admin`);
-  console.log(`  Export:      http://localhost:${PORT}/export`);
-});
+async function startServer() {
+  // Hash passwords asynchronously to avoid blocking the event loop
+  ADMIN_HASH = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
+  EXPORT_HASH = await bcrypt.hash(process.env.EXPORT_PASSWORD, 12);
+
+  httpServer.listen(PORT, () => {
+    console.log(`Rexona x HYROX Challenge running on port ${PORT}`);
+    console.log(`  Leaderboard: http://localhost:${PORT}/leaderboard`);
+    console.log(`  Admin:       http://localhost:${PORT}/admin`);
+    console.log(`  Export:      http://localhost:${PORT}/export`);
+  });
+}
+
+startServer();
