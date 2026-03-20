@@ -48,7 +48,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1.2rem 3rem;
+      padding: 1.2rem 2rem;
       background: rgba(0,0,0,0.3);
       border-bottom: 2px solid var(--accent-cyan);
       flex-shrink: 0;
@@ -56,33 +56,20 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: 1rem;
     }
-    .rexona-logo {
-      height: 52px;
+    .combi-logo {
+      height: 44px;
       width: auto;
       filter: brightness(0) invert(1);
     }
-    .divider {
-      width: 2px;
-      height: 36px;
-      background: rgba(255,255,255,0.25);
-    }
-    .title-block h1 {
-      font-size: 1.5rem;
-      font-weight: 800;       /* Gilroy ExtraBold / Poppins ExtraBold */
-      letter-spacing: 0.1em;  /* brandbook: +50–120/1000em for headlines */
+    .header-subtitle {
+      font-size: 0.68rem;
+      font-weight: 300;
+      letter-spacing: 0.18em;
+      color: rgba(255,255,255,0.45);
       text-transform: uppercase;
-      color: white;
-      line-height: 1;
-    }
-    .title-block p {
-      font-size: 0.72rem;
-      font-weight: 300;       /* Gilroy Light / Poppins Light */
-      letter-spacing: 0.22em;
-      color: rgba(255,255,255,0.55);
-      text-transform: uppercase;
-      margin-top: 0.25rem;
+      margin-left: 0.5rem;
     }
     /* Live indicator */
     .live-badge {
@@ -120,7 +107,7 @@
       inset: 0;
       display: flex;
       flex-direction: column;
-      padding: 2.5rem 4rem;
+      padding: 2rem 2.5rem;
       opacity: 0;
       transform: translateY(12px);
       transition: opacity 0.5s ease, transform 0.5s ease;
@@ -153,9 +140,9 @@
       color: var(--accent-cyan);
     }
     .women .category-badge {
-      background: rgba(255,0,204,0.15);
-      border: 2px solid var(--accent-magenta);
-      color: var(--accent-magenta);
+      background: rgba(0,229,204,0.15);
+      border: 2px solid var(--accent-cyan);
+      color: var(--accent-cyan);
     }
     .category-line {
       flex: 1;
@@ -231,7 +218,7 @@
       font-size: 1.7rem;
     }
     .men .rank-1 .col-score { color: var(--accent-cyan); text-shadow: 0 0 24px rgba(0,229,204,0.5); }
-    .women .rank-1 .col-score { color: var(--accent-magenta); text-shadow: 0 0 24px rgba(255,0,204,0.4); }
+    .women .rank-1 .col-score { color: var(--accent-cyan); text-shadow: 0 0 24px rgba(0,229,204,0.5); }
     /* Rank 2-3 accent */
     .rank-2 .col-rank { color: rgba(255,255,255,0.6); }
     .rank-3 .col-rank { color: rgba(255,255,255,0.45); }
@@ -263,12 +250,8 @@
 
   <div class="header">
     <div class="header-left">
-      <img src="/Rexona_logo_2015.svg" alt="Rexona" class="rexona-logo">
-      <div class="divider"></div>
-      <div class="title-block">
-        <h1>REXONA x HYROX</h1>
-        <p>72 Seconds Challenge — Live Leaderboard</p>
-      </div>
+      <img src="/Rexona%20x%20HYROX%20combilogo.svg" alt="Rexona x HYROX" class="combi-logo">
+      <span class="header-subtitle">72 Seconds Challenge</span>
     </div>
     <div class="live-badge">
       <div class="live-dot"></div>

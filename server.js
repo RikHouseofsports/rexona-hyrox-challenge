@@ -104,7 +104,7 @@ const stmts = {
            s.score_meters
     FROM scores s
     JOIN participants p ON s.participant_id = p.id
-    WHERE s.geslacht = 'Man'
+    WHERE s.geslacht = 'Man' AND s.created_at >= ?
     ORDER BY s.score_meters DESC
     LIMIT 10
   `),
@@ -115,7 +115,7 @@ const stmts = {
            s.score_meters
     FROM scores s
     JOIN participants p ON s.participant_id = p.id
-    WHERE s.geslacht = 'Vrouw'
+    WHERE s.geslacht = 'Vrouw' AND s.created_at >= ?
     ORDER BY s.score_meters DESC
     LIMIT 10
   `),
@@ -123,6 +123,22 @@ const stmts = {
   updateScore: db.prepare(`UPDATE scores SET score_meters = ? WHERE id = ?`),
   deleteScore: db.prepare(`DELETE FROM scores WHERE id = ?`),
 };
+
+// ─────────────────────────────────────────────
+// Leaderboard day boundary (resets at 02:00 CET = 01:00 UTC)
+// ─────────────────────────────────────────────
+const RESET_HOUR_UTC = parseInt(process.env.RESET_HOUR_UTC || '1', 10); // 1 = 02:00 CET
+
+function getLeaderboardDayStart() {
+  const now = new Date();
+  const boundary = new Date(now);
+  boundary.setUTCHours(RESET_HOUR_UTC, 0, 0, 0);
+  if (now < boundary) {
+    boundary.setUTCDate(boundary.getUTCDate() - 1);
+  }
+  // Format as SQLite datetime (UTC)
+  return boundary.toISOString().replace('T', ' ').slice(0, 19);
+}
 
 // Atomic register: insert participant + score in one transaction
 function registerTransaction(data) {
@@ -263,9 +279,6 @@ function validateRegistration(body) {
   if (!VALID_EVENTS.includes(body.event_naam))
     errors.push('Ongeldig evenement geselecteerd.');
 
-  if (body.opt_in !== 'on' && body.opt_in !== true && body.opt_in !== '1')
-    errors.push('Akkoord met de voorwaarden is verplicht.');
-
   return {
     errors,
     data: {
@@ -276,7 +289,7 @@ function validateRegistration(body) {
       geslacht:     body.geslacht,
       score_meters: isNaN(score) ? 0 : score,
       event_naam:   body.event_naam,
-      opt_in:       errors.length === 0 ? 1 : 0,
+      opt_in:       (body.opt_in === 'on' || body.opt_in === true || body.opt_in === '1') ? 1 : 0,
     },
   };
 }
@@ -301,8 +314,8 @@ const wss = new WebSocketServer({
 function broadcastLeaderboardUpdate() {
   const payload = JSON.stringify({
     type: 'leaderboard_update',
-    men:   stmts.getLeaderboardMen.all(),
-    women: stmts.getLeaderboardWomen.all(),
+    men:   stmts.getLeaderboardMen.all(getLeaderboardDayStart()),
+    women: stmts.getLeaderboardWomen.all(getLeaderboardDayStart()),
   });
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
@@ -319,8 +332,8 @@ wss.on('connection', (ws) => {
   try {
     ws.send(JSON.stringify({
       type:  'leaderboard_update',
-      men:   stmts.getLeaderboardMen.all(),
-      women: stmts.getLeaderboardWomen.all(),
+      men:   stmts.getLeaderboardMen.all(getLeaderboardDayStart()),
+      women: stmts.getLeaderboardWomen.all(getLeaderboardDayStart()),
     }));
   } catch (e) { /* ignore */ }
 });
@@ -432,8 +445,8 @@ app.get('/leaderboard', (_req, res) => {
 
 app.get('/api/leaderboard', (_req, res) => {
   res.json({
-    men:   stmts.getLeaderboardMen.all(),
-    women: stmts.getLeaderboardWomen.all(),
+    men:   stmts.getLeaderboardMen.all(getLeaderboardDayStart()),
+    women: stmts.getLeaderboardWomen.all(getLeaderboardDayStart()),
   });
 });
 
@@ -554,8 +567,24 @@ app.get('/', (req, res) => res.redirect('/leaderboard'));
 // ─────────────────────────────────────────────
 // Start server (async for non-blocking bcrypt hashing)
 // ─────────────────────────────────────────────
+// Schedule daily leaderboard reset broadcast at RESET_HOUR_UTC
+function scheduleLeaderboardReset() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setUTCHours(RESET_HOUR_UTC, 0, 0, 0);
+  if (next <= now) {
+    next.setUTCDate(next.getUTCDate() + 1);
+  }
+  const ms = next - now;
+  setTimeout(() => {
+    console.log('Daily leaderboard reset — broadcasting fresh leaderboard');
+    broadcastLeaderboardUpdate();
+    scheduleLeaderboardReset();
+  }, ms);
+  console.log(`  Next leaderboard reset scheduled at ${next.toISOString()}`);
+}
+
 async function startServer() {
-  // Hash passwords asynchronously to avoid blocking the event loop
   ADMIN_HASH = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
   EXPORT_HASH = await bcrypt.hash(process.env.EXPORT_PASSWORD, 12);
 
@@ -564,6 +593,7 @@ async function startServer() {
     console.log(`  Leaderboard: http://localhost:${PORT}/leaderboard`);
     console.log(`  Admin:       http://localhost:${PORT}/admin`);
     console.log(`  Export:      http://localhost:${PORT}/export`);
+    scheduleLeaderboardReset();
   });
 }
 
